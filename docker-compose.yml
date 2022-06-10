@@ -18,6 +18,11 @@ services:
     image: data-eng-challenge/etl:latest
     build: 
       context: ./etl
+    volumes:
+      - ./data/events/inbox/users:/app/events/users
+      - ./data/events/inbox/cards:/app/events/cards
+    environment:
+      EVENT_DIR: '/app/events/'
 
   users:
     container_name: users_service
