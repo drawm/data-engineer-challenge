@@ -4,6 +4,8 @@ services:
   dwh:
     container_name: dwh
     image: postgres:11-alpine
+    ports:
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     restart: always
@@ -16,11 +18,14 @@ services:
       - dwh
     command: ["./wait-for-it.sh", "dwh:5432", "--", "python", "main.py"]
     image: data-eng-challenge/etl:latest
-    build: 
+    build:
       context: ./etl
+      dockerfile: ./Dockerfile
     volumes:
       - ./data/events/inbox/users:/app/events/users
       - ./data/events/inbox/cards:/app/events/cards
+    env_file:
+      - database.env
     environment:
       EVENT_DIR: '/app/events/'
 
