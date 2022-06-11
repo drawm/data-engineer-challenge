@@ -123,4 +123,121 @@ Here's what I did while I implemented the basic implementation
 * Added an event variable to control the location of the inbox folder. It was necessary to run locally (easier for debugging) while keeping a separate config for docker
 * Added volumes to `etl` service to access event files
 
+## Database
+Now that I have some data, I can try to setup a database connection and send data to it.
+It's important to do the database connection before parsing the data further because it will be affected by the way the connection ingest data.
+`psycopg2` seems like a valid choice, it's low level enough to be flexible but high level enough to save me time (it also accepts dict witch will save me time initially and ill be able to add things on top if needed)
 
+Now is the time to look into the requirements for managing dependencies :eyes:
+
+oh great, `pyenv` is to manage python versions, not dependencies :muscle::tada:
+I can't find anything against using `pipenv` so ill use that
+
+
+
+Fighting with python env once again T-T
+* My distro's python is 3.10, project require 3.7.1
+* Installed `pipenv` using my distro's package manager (it also installs `pip` & `pyenv`)
+* I'm getting errors when I try to create a virtualenv, it complains about `--external`
+* I manage to create a virtual environment with python 3.7.1
+* My ide refuse to recognise (or install) python dependencies
+* Debugging with my IDE yield `Process finished with exit code 139 (interrupted by signal 11: SIGSEGV)` but running the script with without debugger works fine...
+* Pipenv complains about `backports.zoneinfo` (is there a version mismatch somewhere?)
+
+Back to basic, something tells me the version missmatch between the virtual environment & my os is causing issues
+* Installing `pyenv` for real
+* Follow the readme to setup a virtual environment
+* rc/path issues, should be good now
+* Install pipenv using pip from a pyenv shell using python 3.7.1
+* Couldn't install `backports.zoneinfo` again ><
+
+```terminal
+ /usr/lib/python3.10/subprocess.py:1070: ResourceWarning: subprocess 56002 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+sys:1: ResourceWarning: unclosed file <_io.FileIO name=5 mode='rb' closefd=True>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+sys:1: ResourceWarning: unclosed file <_io.FileIO name=8 mode='rb' closefd=True>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.10/subprocess.py:1070: ResourceWarning: subprocess 56005 is still running
+_warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+sys:1: ResourceWarning: unclosed file <_io.FileIO name=7 mode='rb' closefd=True>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+sys:1: ResourceWarning: unclosed file <_io.FileIO name=10 mode='rb' closefd=True>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+```
+Python 3.10 seems to be open somewhere :thinking:
+`killall python` does kill some python process, but the error persist, ill do a quick reboot JIC
+Same issue, weirdly it doesn't cause the issues at the root of the repo, only in `etl/`. Maybe its due to `psycobg`?
+Even installing `psycopg` in a new folder/pipenv project doesn't work 
+```terminal
+data-engineer-challenge on  master [✘!?] via 🐍 v3.7.1 (data-engineer-challenge) 
+❯ pipenv install psycopg -v              
+Courtesy Notice: Pipenv found itself running within a virtual environment, so it will automatically use that environment, instead of creating its own for any project. You can set PIPENV_IGNORE_VIRTUALENVS=1 to force pipenv to ignore that environment and create its own instead. You can set PIPENV_VERBOSITY=-1 to suppress this warning.
+Installing psycopg...
+Installing package: psycopg
+Writing supplied requirement line to temporary file: 'psycopg'
+Installing 'psycopg'
+$ /home/damon/.pyenv/versions/3.7.1/envs/data-engineer-challenge/bin/python -m pip install --verbose --upgrade --exists-action=i -r /tmp/pipenv-v7zmyw_u-requirements/pipenv-g1gxaqjf-requirement.txt -i https://pypi.org/simple
+Using source directory: '/home/damon/.pyenv/versions/3.7.1/envs/data-engineer-challenge/src'
+Error:  An error occurred while installing psycopg!
+Error text: 
+
+
+✘ Installation Failed 
+(data-engineer-challenge) 
+```
+Using pip didn't work earlier but seems to work now?
+ok, removing Pipfile, Pipfile.lock and remade the pipenv files while in the pyenv shell (so the both use the same env) seems to work, I was able to install `psycopg`
+More segfault >>
+
+ok, `psycopg` requires a wrapper
+```
+ImportError: no pq wrapper available.
+Attempts made:
+- couldn't import psycopg 'c' implementation: No module named 'psycopg_c'
+- couldn't import psycopg 'binary' implementation: No module named 'psycopg_binary'
+- couldn't import psycopg 'python' implementation: libpq library not found
+```
+It wasn't specified in the doc >>
+> Unless you compile psycopg2 as a static library, or you install it from a self-contained wheel package, it will need the libpq library at runtime (usually distributed in a libpq.so or libpq.dll file). psycopg2 relies on the host OS to find the library if the library is installed in a standard location there is usually no problem; if the library is in a non-standard location you will have to tell Psycopg how to find it, which is OS-dependent (for instance setting a suitable LD_LIBRARY_PATH on Linux).
+
+Ok it was, but to be fair it was buried under the 2.7 & 2.8 section while I use 3.0
+A quick `yay -S postgresql-libs` and I'm in business :muscle:
+
+I need to better configure my connection :eyes:
+Doc for psycopg is confusing, but I managed to figured it out
+It also added the ports docker-compose config to the wrong container :S
+
+Finally, I managed to get the debugger running. somehow it I run it with verbose (-v) it works :shrug:
+
+Added a table setup method and an insert user method. Ill will ensure we can save more than one event type later.
+
+It works good enough for now. I can clean it up and improve it later.
+
+Before I log off, I want to try to fix the docker-compose etl service. Its not installing anymore, its complaining about `zoneinfo`...
+It's a version missmatch once again! Updating the base image to python:3.7.1 did the trick.
+
+## Recap before signing off
+I tried to stay as pythonistic & simple as possible, just to get the python API on my good side.
+Next time I will make place for a proper data pipeline
+
+### Time split
+* 3/6 of my time on fighting against the setup (python, pip and virtualenv)
+* 2/6 was spent on the database, trying to follow the wrong doc for a little while 
+* 1/6 was spent in loading files from the filesystem and converting them to dict
+
+### Tomorrow
+My plan is to split the main.py file into isolated chunks.
+I might change my mind after a good night sleep, but I think these will be a good starting point:
+* Init (config, db, call main logic flow)
+* Extract (load event files)
+* Transform (??? we will see, I ~~might~~ will split this one further)
+* Load (data to query)
+
+Things I will have to figure out later: 
+* Who will commit the transaction? (load or a higher layer?)
+* What is the python way to do polymorphism? I was shunned in the past because I used lambda in python so ill do a bit of research before I implement anything
+
+Tomorrow make sure you save your graphs! (mermaid or svg?)
