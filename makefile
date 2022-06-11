@@ -5,13 +5,15 @@ build:
 	docker-compose build
 
 # Run backing services while in dev
-dev: build
+dev: clean
 	docker-compose up dwh users cards -d
 	docker-compose up etl
 
-
 ps:
 	docker-compose ps
+
+stop:
+	docker-compose stop
 
 logs:
 	docker-compose logs -f
