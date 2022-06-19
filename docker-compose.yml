@@ -22,8 +22,7 @@ services:
       context: ./etl
       dockerfile: ./Dockerfile
     volumes:
-      - ./data/events/inbox/users:/app/events/users
-      - ./data/events/inbox/cards:/app/events/cards
+      - ./data/events:/app/events
     env_file:
       - database.env
     environment:
