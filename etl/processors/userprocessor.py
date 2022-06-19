@@ -1,5 +1,6 @@
 from etl.processors.event_processor import EventProcessor
 
+UserDict = Dict(str: Dict[])
 
 class User(EventProcessor):
     """

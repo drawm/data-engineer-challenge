@@ -321,8 +321,6 @@ Flowchart of the transformation logic
 ```mermaid
 flowchart LR    
     DB[(DB)]
-    Insert[insert] --> DB
-    Update[update] --> DB 
     
     subgraph Extraction
     Load[(event)]
@@ -330,35 +328,62 @@ flowchart LR
 
         isSchemaValid
         -- no --> logInvalidSchema>Log invalid schema]
-
     end
+
     subgraph Transformation
+        Insert[Insert]
+        Update[Update]
+        Noop[Do nothing]
+
         isSchemaValid
-        -- yes ---> isCard{is card event}
+        -- yes ---> detectType{what type of event is this?}
 
-        isCard
-        -- new card event --> alreadyExistNew{card with same id exist in DB}
+        subgraph CardProcessing
 
-            alreadyExistNew
-            -- yes --> Noop[Do nothing]
-            
-            alreadyExistNew
-            -- no --> Insert
+            isCard[Card]
+            -- new card event --> cardAlreadyExistNew{card with same id exist in DB}
 
-        isCard
-        -- modify card event --> alreadyExistModify{card with rame id exist in DB}
 
-            alreadyExistModify
-            -- no --> Insert 
-
-            alreadyExistModify
+            isCard
+            -- modify card event --> cardAlreadyExistModify{card with rame id exist in DB}
             -- yes --> dbIsOlder{db card is older}
-            
-            dbIsOlder
-            -- yes --> Update
 
-            dbIsOlder
-            -- no --> Noop 
+        end
+
+        subgraph UserProcessing
+            
+            isUser[User]
+            -- new card event --> userAlreadyExistNew{user with same id exist in DB}
+
+        end
+        
+        cardAlreadyExistModify
+        -- no --> Insert 
+
+        cardAlreadyExistNew
+        -- yes --> Noop
+        
+        cardAlreadyExistNew
+        -- no --> Insert
+              
+        detectType --> isCard
+        detectType --> isUser
+
+        dbIsOlder
+        -- yes ----> Update
+
+        dbIsOlder
+        -- no ---> Noop 
+
+        userAlreadyExistNew
+        -- yes ---> Noop
+        
+        userAlreadyExistNew
+        -- no -----> Insert
+
+
+        Insert ---> DB
+        Update ---> DB 
     end
 ```
 
