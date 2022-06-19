@@ -363,3 +363,8 @@ flowchart LR
 ```
 
 I think I got enough data to get started
+
+## Implementation
+Splitting main.py into different layers is going as I intended to.
+I'm intentionally making the simplest of validation as this test is about architecture and not my knowledge of the Python library ecosystem
+
