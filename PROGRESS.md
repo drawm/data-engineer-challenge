@@ -241,3 +241,125 @@ Things I will have to figure out later:
 * What is the python way to do polymorphism? I was shunned in the past because I used lambda in python so ill do a bit of research before I implement anything
 
 Tomorrow make sure you save your graphs! (mermaid or svg?)
+
+# 2022-06-19
+I'm finally able to work on this again.
+Plans for today is to:
+* Graph the outline of the architecture I'm aiming for
+* Implement a working prototype following that architecture
+
+The core API should be already taken care of (fs io, interact with db, etc)
+It will require research on Python design patterns but don't get into a rabbit hole.
+
+Research doc:
+[python-patterns.guide](https://python-patterns.guide/) is a good resource but a bit too verbose.
+
+## Architecture
+Here we have 3 main bottlenecks.
+* FS read&write
+* Database interaction
+* Blocking IO
+
+The more data we have, the more thore bottlenecks will become cluttered and show down the ETL.
+ATM it's not an issue but good architecture is about planning for the future and without more information on the project it's all I can foresee.
+
+```mermaid
+flowchart LR
+    subgraph External Data
+        subgraph Events
+            FS[(File System)]
+        end
+        
+        subgraph Warehouse
+            DB[(Database)]
+        end
+    end
+    
+    subgraph ETL Service
+        subgraph Extraction
+            Ingress --> validation["validate schema"]
+        end
+
+        subgraph Transformation
+            Conversion[Convert event to entities] -->
+            Operation[Decide what operation is needed]
+        end
+    end
+
+    Extraction <-. Read .-> Events
+    Extraction -- Send/Schedule --> Transformation
+    Transformation <-. Query .-> Warehouse
+    Transformation -- Insert --> Warehouse
+    Transformation -- Update --> Warehouse
+```
+* Extraction & Transformation can be split in multiple service & scaled later.
+* Data warehouse can use sharding to enable more read & write if needed.
+
+
+### Extraction layer
+TLDR: The extraction part of the service should be its own layer.
+
+In its current form, because the extraction layer uses the FS, it's blocked by IO operations & can't vertically scale easily.
+By moving the extraction to its own layer, it will be possible (without too much cost) to add new ways to ingest data, scale vertically & manage locks/scheduling.
+
+### Transformation layer
+Transformation in this case is mostly about updating the right data in the right way.
+**Note that I'm assuming we want to store the user & card data, not the event itself as it would be too easy to test a senior/staff. If this was a "real" task I would ask for more detail on the requirements & expected outcome**
+This process depends on the type of data we have, lets look at the events and determine what will be the final schema and what type of transformation/logic we need.
+
+* New card
+  * Insert into db 
+  * Can have missing user_id which makes it unusable in my book. Usually I would ask for more info on the expected outcome, but I will log an error for now
+* Modify card
+  * Find & update the card data (based on id given the value remains the same)
+* New user
+  * Insert into db 
+
+Since we won't ingest data in the same order that they are generated it is possible we will try to update cards that aren't yet in the db, luckily all the relevant data to create the card is already in the update event 
+
+Flowchart of the transformation logic
+```mermaid
+flowchart LR    
+    DB[(DB)]
+    Insert[insert] --> DB
+    Update[update] --> DB 
+    
+    subgraph Extraction
+    Load[(event)]
+    --> isSchemaValid{is schema valid}
+
+        isSchemaValid
+        -- no --> logInvalidSchema>Log invalid schema]
+
+    end
+    subgraph Transformation
+        isSchemaValid
+        -- yes ---> isCard{is card event}
+
+        isCard
+        -- new card event --> alreadyExistNew{card with same id exist in DB}
+
+            alreadyExistNew
+            -- yes --> Noop[Do nothing]
+            
+            alreadyExistNew
+            -- no --> Insert
+
+        isCard
+        -- modify card event --> alreadyExistModify{card with rame id exist in DB}
+
+            alreadyExistModify
+            -- no --> Insert 
+
+            alreadyExistModify
+            -- yes --> dbIsOlder{db card is older}
+            
+            dbIsOlder
+            -- yes --> Update
+
+            dbIsOlder
+            -- no --> Noop 
+    end
+```
+
+I think I got enough data to get started
