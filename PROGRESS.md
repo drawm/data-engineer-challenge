@@ -392,4 +392,13 @@ I think I got enough data to get started
 ## Implementation
 Splitting main.py into different layers is going as I intended to.
 I'm intentionally making the simplest of validation as this test is about architecture and not my knowledge of the Python library ecosystem
+Added a storage.py file and tried to migrate the db code from main.py to it.
+It worked for a few minutes, but after taking a break with a friend it doesn't work anymore... I don't even have an error printed or a breakpoint on error.
+Digging deeper it seems to break at /home/damon/.pyenv/versions/3.7.1/lib/python3.7/site-packages/psycopg/pq/pq_ctypes.py:84
+```python
+self._notice_receiver = impl.PQnoticeReceiver(  # type: ignore
+    partial(notice_receiver, wconn=ref(self)) # <--- breaks here
+)
+```
 
+I'm dead in the water. It's past 10pm and I can't debug... I'll revisit another day and see if I can get the debugger working again (it was already flaky)
