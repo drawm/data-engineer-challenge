@@ -1,5 +1,6 @@
 class Config:
     def __init__(self, env):
+        print("Extracting configuration")
         self.DIR_LOCATION = env.get('EVENT_DIR')
         if self.DIR_LOCATION is None:
             self.DIR_LOCATION = '/app/events/'
@@ -25,3 +26,4 @@ class Config:
         if self.DB_PORT is None:
             self.DB_PORT=5432
 
+        print("Configuration extraction completed")

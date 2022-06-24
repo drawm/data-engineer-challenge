@@ -1,4 +1,2 @@
--i https://pypi.org/simple
-backports.zoneinfo==0.2.1
-psycopg==3.0.14
-typing-extensions==4.2.0
+psycopg==3.0.15
+psycopg-binary==3.0.15
