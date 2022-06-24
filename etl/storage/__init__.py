@@ -4,25 +4,10 @@ import os
 from psycopg import Cursor, Connection
 
 from etl.config import Config
-from etl.storage.User import User
+from etl.storage.Card import CardStorage
+from etl.storage.User import UserStorage
 
 config = Config(os.environ)
-
-# Will be decoupled and made to support more event type later
-def db_setup(conn, cur):
-    print('Setup database table if not exists')
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            external_id INT NOT NULL,
-            name char(255) NOT NULL,
-            address TEXT NOT NULL,
-            job char(255) NOT NULL,
-            score real NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS external_id ON users (id, external_id);
-    """)
-    conn.commit()
 
 
 def connect() -> (Connection, Cursor):
@@ -36,8 +21,8 @@ def connect() -> (Connection, Cursor):
     )
     print('DB connection successful')
 
-    cur = conn.cursor()
-    return (conn, cur)
+    return conn, conn.cursor()
+
 
 class Storage:
     _instance = None
@@ -48,11 +33,15 @@ class Storage:
 
             cls._instance = super(Storage, cls).__new__(cls)
 
+            # Initialization goes here
             (conn, cur) = connect()
-            db_setup(conn, cur)
-            cls._instance.user = User(conn, cur)
             cls._instance.conn = conn
             cls._instance.cur = cur
 
-            # Put any initialization here.
+            cls._instance.user = UserStorage(conn, cur)
+            cls._instance.user.setup()
+
+            cls._instance.card = CardStorage(conn, cur)
+            cls._instance.card.setup()
+
         return cls._instance

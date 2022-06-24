@@ -47,7 +47,7 @@ def extract_events(event_processors: Dict[str, EventProcessor]):
                     event_file_path = event_file.path
                     event = __load_json_file(event_file_path)
                     event_type = event['metadata']['type']
-                    # print("==> Processing event type '%s'" % event_type)
+                    print("==> Processing event type '%s'" % event_type)
 
                     # TODO: Move to /processing/{event_type}/
                     event_file_path = __mark_as_processing(event_file_path, event_type, event_file.name)
@@ -58,11 +58,10 @@ def extract_events(event_processors: Dict[str, EventProcessor]):
                         __mark_as_invalid(event_file_path, event_type, event_file.name)
                         pass
 
-                    if processor.validate_schema(event) is False:
-                        # print('Event is invalid "%s"' % event)
+                    if processor.validate_schema(event):
+                        success = processor.process(event)
+                        if success:
+                            __mark_as_completed(event_file_path, event_type, event_file.name)
+                    else:
+                        print('Event is invalid "%s"' % event)
                         __mark_as_invalid(event_file_path, event_type, event_file.name)
-                        pass
-
-                    success = processor.process(event)
-                    if success:
-                        __mark_as_completed(event_file_path, event_type, event_file.name)

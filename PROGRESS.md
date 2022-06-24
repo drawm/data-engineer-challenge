@@ -317,9 +317,9 @@ This process depends on the type of data we have, lets look at the events and de
 
 Since we won't ingest data in the same order that they are generated it is possible we will try to update cards that aren't yet in the db, luckily all the relevant data to create the card is already in the update event 
 
-Flowchart of the transformation logic
+[Flowchart of the transformation logic](https://mermaid-js.github.io/mermaid-live-editor/view#pako:eNqNVM1u4jAQfhXLp1YqL8CBalk4ILHd1bbdS8LBxAOxNrGR7TSNIt59x3EAO6QLPjjx_H0zn8fT0kxxoFO6K1Sd5Uxbsv5NcKXS7Yt58rCYP278ye-m2u41O-Rk-Wk1y6xQ0ivWivHkAT5A2pPHZDIjwrxmOZTsDysEb4UhpjuSD3c-pr2zW5HlRTyZEKm6UIXar2Tn5w1na7Unwkv6sD0wSH6KfM73TTNpdkqX7JKzWytpQNvEfzYX-fuBMwuJ_wTyF6UOyUJhUjYXcr-5r4QGDH6wCA4WMvvWHKCtc2aJxT-idqQjDgMQjGqeI2LOJXxnmv_SKgNjEDk08eBOn7htE2schVCTDDU9jsvEHb8VGhhvlp_C2Beo286kFjYnhpVAkFdwKmQZm6FLagzzCq1UXOyaW4A_OqsAU49iDmJ7JpHI7cr8LDjolm89EpKnnCAiL2iFiMt3vO6QyxBlWKOzTdx2F68VGg55dbL_8xrle53IOHdjr8Q3Mgljjtz0SHPOuta-B3zoHyHHFIVhLq3fT4a4d67UjvGwjPONj70s9PBP9bZHl25fbsTTyM2NP-KviLoVwCOHXKVXk8gjLObDSXSSk_OIo0-0BJxnguMEb504pRbHD6R0ir-c6b8pTeUR7aouxJILqzSdWl3BE2WVVa-NzE5nb7MQDB9I6YXHfzYd09U)
 ```mermaid
-flowchart LR    
+`flowchart LR    
     DB[(DB)]
     
     subgraph Extraction
@@ -384,7 +384,7 @@ flowchart LR
 
         Insert ---> DB
         Update ---> DB 
-    end
+    en`d
 ```
 
 I think I got enough data to get started
@@ -428,3 +428,19 @@ Hoo I found the real issue, I feel dumb now.
 Square brackets have a special meaning in zsh (and maybe bash) so the package name needs to be wrapped in quote for it to be a string
 
 `pip install 'psycopg[binary]'` works...
+
+
+Finished with user events, moving on to cards. The architecture should be flexible enough to make adding extra logic easy
+Yep, the new logic is easy enough to add, but I have a source of truth issue, I only store the update timestamp of the object, but I should be using the event metadata.
+Imo the user & card data should only be stored and used to do lookups. Asserting event order should be done using event metadata.
+
+Only the last event is relevant so ill add a json string to the table. It will work as a snapshot. Some kind of chain that generate an end state (like git or a blockchain) would be "better" but way out of scope of this test.
+We can use the data to start a chain if needed
+
+Then, to know if I should be doing an update, I needed a way to convert the tuple I get from the db to compare the metadata.
+I'm glad everything is properly segregated, it's easy to find what needs updating as I change the query, setup & parsing of card & user entities/table
+I'm tempted to create a tuple of every field in the database and use it everywhere, but in my experience, while it saves some typing it also makes everything harder quickly. As long as all the queries are in one place it should be easy/safe enough to update.
+
+Usually I would have written tests to validate everything works, but I'm not going to learn how to setup pytest for this challenge xD
+
+Next ill fix the etl service. I think the volumes aren't properly configured

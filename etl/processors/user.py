@@ -8,16 +8,14 @@ class UserProcessor(EventProcessor):
     """
 
     def validate_schema(self, data: dict) -> bool:
-        if data['metadata'] and data['payload']:
-            return True
-
-        return False
+        return data['metadata'] and data['payload']
 
     def process(self, data: dict) -> bool:
         print('processing user event')
-        user = User(data)
+        user = User(data['payload'], data['metadata'])
         storage = Storage()
 
+        # During user creation, don't override existing users
         if storage.user.get_by_id(user.id):
             return False
 
