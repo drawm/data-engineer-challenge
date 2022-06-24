@@ -402,3 +402,29 @@ self._notice_receiver = impl.PQnoticeReceiver(  # type: ignore
 ```
 
 I'm dead in the water. It's past 10pm and I can't debug... I'll revisit another day and see if I can get the debugger working again (it was already flaky)
+
+# 2022-06-19
+Took an hour to investigate. The crash is due to a segfault in the pglib psycopg uses. I installed pglib on my system as it didn't came with psycopg and the binary & c variants wouldn't install (pip can't find them)
+Because pip was also crashing due to segfault when I used in within pipenv, I ditched pipenv and used venv instead.
+I had fewer errors but the binary variant of psycopg still didn't want to install.
+
+I found multiple packages (`psyco-binary`, `psyco_binary`) that could be the one I'm looking for (`psyco[binary]`)
+Simply using those packages didn't work, ill revisit this later.
+
+Quick note, I also discovered that I run out of user events to process which stops the process.
+I often mistake the two problems because the output is so similar (bunch of python init log & maybe 1 exit code 139 when python segfaults)
+I'll have to keep an eye out for the difference and maybe add a bit of tooling to ensure I don't get confused again.
+
+# 2022-06-24
+I want to find a library written entirely in python to ensure I don't get segfault.
+Found one, it looks similar enough, but it also has some C underneath...
+
+~~While I was re-re-re-reading the installation doc for psycopg3 I realised the square brackets are optional!!! T-T~~
+~~Honestly I should've thought of it sooner... it's how most examples are written after all.~~
+
+Installing psycopgbinary (instead of psycopg[binary]) works. It doesn't mave types and internally it mentions psycopg2 even-tough It's supposed to be psycopg3...
+Actually looking into it further, it's not an official package, it's from 2020, and it's version 0.0.1? 
+Hoo I found the real issue, I feel dumb now.
+Square brackets have a special meaning in zsh (and maybe bash) so the package name needs to be wrapped in quote for it to be a string
+
+`pip install 'psycopg[binary]'` works...
