@@ -1,6 +1,6 @@
-from etl.entities.Card import Card
-from etl.processors.event_processor import EventProcessor
-from etl.storage import Storage
+from entities.Card import Card
+from processors.event_processor import EventProcessor
+from storage import Storage
 
 
 # def _new_card(old_card: Card, new_card: Card, storage=Storage()):

@@ -3,9 +3,9 @@ import os
 
 from psycopg import Cursor, Connection
 
-from etl.config import Config
-from etl.storage.Card import CardStorage
-from etl.storage.User import UserStorage
+from config import Config
+from storage.Card import CardStorage
+from storage.User import UserStorage
 
 config = Config(os.environ)
 

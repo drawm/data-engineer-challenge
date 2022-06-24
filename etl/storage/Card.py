@@ -2,7 +2,7 @@ import json
 
 from psycopg import Cursor, Connection
 
-from etl.entities.Card import Card
+from entities.Card import Card
 
 
 def tuple_to_entity(result) -> Card:

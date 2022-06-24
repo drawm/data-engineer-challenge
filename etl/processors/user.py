@@ -1,6 +1,6 @@
-from etl.entities.User import User
-from etl.processors.event_processor import EventProcessor
-from etl.storage import Storage
+from entities.User import User
+from processors.event_processor import EventProcessor
+from storage import Storage
 
 class UserProcessor(EventProcessor):
     """

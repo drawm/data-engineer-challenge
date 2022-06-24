@@ -1,6 +1,6 @@
 from psycopg import Cursor, Connection
 
-from etl.entities import User
+from entities import User
 
 
 class UserStorage:

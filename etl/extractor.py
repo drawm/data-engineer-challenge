@@ -4,7 +4,7 @@ from typing import Dict
 from config import Config
 import json
 
-from etl.processors.event_processor import EventProcessor
+from processors.event_processor import EventProcessor
 
 config = Config(os.environ)
 

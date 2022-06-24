@@ -1,6 +1,6 @@
 import json
 
-from etl.entities.Metadata import Metadata
+from entities.Metadata import Metadata
 
 
 class Card:
