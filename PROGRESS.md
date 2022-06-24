@@ -444,3 +444,10 @@ I'm tempted to create a tuple of every field in the database and use it everywhe
 Usually I would have written tests to validate everything works, but I'm not going to learn how to setup pytest for this challenge xD
 
 Next ill fix the etl service. I think the volumes aren't properly configured
+Done! the modules where wrong due to a misconfiguration between the ide and dockerfile
+
+
+I added a loop with a delay to continuously parse events from the disk.
+I could have used events from the file system to parse files as they come but this is good enough as a prototype 
+
+Checked one last time to make sure it works (result & readme) and I'm done

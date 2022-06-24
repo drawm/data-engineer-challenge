@@ -1,3 +1,4 @@
+import time
 from typing import Dict
 
 from extractor import extract_events
@@ -11,4 +12,9 @@ event_processors: Dict[str, EventProcessor] = {
 }
 
 # TODO: Add a way to process new events (loop / watch)
-extract_events(event_processors)
+delay = 2
+while True:
+    print('Starting extraction now!')
+    extract_events(event_processors)
+    print('Extraction completed, waiting for %s seconds...' % delay)
+    time.sleep(delay)
